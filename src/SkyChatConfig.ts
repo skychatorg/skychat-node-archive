@@ -1,9 +1,9 @@
 
-export class SkyChatConfig {
+export interface SkyChatConfig {
 
-    host: string = '127.0.0.1';
+    host: string;
 
-    port: number | undefined;
+    port?: number;
 
-    secure: boolean = false;
+    secure?: boolean;
 }

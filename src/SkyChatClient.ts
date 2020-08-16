@@ -17,6 +17,11 @@ export class SkyChatClient extends EventEmitter {
     /**
      * @TODO to be typed with the correct schema
      */
+    public token: any | null;
+
+    /**
+     * @TODO to be typed with the correct schema
+     */
     public currentUser: any | null;
 
     /**
@@ -34,15 +39,37 @@ export class SkyChatClient extends EventEmitter {
      */
     public playerState: any | null;
 
+    /**
+     * List of messages
+     * @TODO to be typed with the correct schema
+     */
+    public messages: any[];
+
+    /**
+     * List of private messages
+     * @TODO to be typed with the correct schema
+     */
+    public privateMessages: {[username: string]: any[]};
+
+    /**
+     * Polls in progress
+     * @TODO to be typed with the correct schema
+     */
+    public polls: any[];
+
     constructor(config: SkyChatConfig) {
         super();
 
         this.config = config;
         this.currentRoomId = null;
+        this.token = null;
         this.currentUser = null;
         this.connectedList = [];
         this.typingList = [];
         this.playerState = null;
+        this.messages = [];
+        this.privateMessages = {};
+        this.polls = [];
         this.bind();
     }
 
@@ -50,7 +77,11 @@ export class SkyChatClient extends EventEmitter {
      * Connect to the server
      */
     connect() {
-        const path = (this.config.secure ? 'wss' : 'ws') + '://' + this.config.host + (this.config.port ? ':' + this.config.port : '');
+        // Build path to websocket server
+        const protocol = this.config.secure ? 'wss://' : 'ws://';
+        const port = this.config.port ? ':' + this.config.port : '';
+        const path = protocol + this.config.host + port;
+        // Create websocket
         this.webSocket = new WebSocket(path);
         this.webSocket.addEventListener('message', this.onWebSocketMessage.bind(this));
         this.webSocket.addEventListener('close', this.onWebSocketClose.bind(this));
@@ -242,15 +273,11 @@ export class SkyChatClient extends EventEmitter {
 
 
     /**
-     *
+     * When the server updates the user's token.
      * @param token auth token
      */
     onAuthToken(token: any) {
-        if (token) {
-
-        } else {
-
-        }
+        this.token = token;
     }
 
     /**
@@ -266,7 +293,7 @@ export class SkyChatClient extends EventEmitter {
      * @param message
      */
     onMessage(message: any) {
-
+        this.messages.push(message);
     }
 
     /**
@@ -274,7 +301,7 @@ export class SkyChatClient extends EventEmitter {
      * @param messages
      */
     onMessages(messages: any[]) {
-
+        this.messages.push(...messages);
     }
 
     /**
@@ -282,7 +309,10 @@ export class SkyChatClient extends EventEmitter {
      * @param privateMessage
      */
     onPrivateMessage(privateMessage: any) {
-
+        if (typeof this.privateMessages[privateMessage.user.username] === 'undefined') {
+            this.privateMessages[privateMessage.user.username] = [];
+        }
+        this.privateMessages[privateMessage.user.username].push(privateMessage);
     }
 
     /**
@@ -290,7 +320,11 @@ export class SkyChatClient extends EventEmitter {
      * @param message
      */
     onMessageEdit(message: any) {
-
+        const messageIndex =  this.messages.findIndex(m => m.id === message.id);
+        if (messageIndex === -1) {
+            return;
+        }
+        this.messages[messageIndex] = message;
     }
 
     /**
@@ -298,7 +332,11 @@ export class SkyChatClient extends EventEmitter {
      * @param data
      */
     onMessageSeen(data: any) {
-
+        const entry = this.connectedList.find(e => e.user.id === data.user);
+        if (! entry) {
+            return;
+        }
+        entry.user.data.plugins.lastseen = data.message;
     }
 
     /**
@@ -330,7 +368,7 @@ export class SkyChatClient extends EventEmitter {
      * @param polls
      */
     onPoll(polls: any[]) {
-
+        this.polls = polls;
     }
 
     /**
