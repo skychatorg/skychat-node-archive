@@ -52,10 +52,28 @@ export class SkyChatClient extends EventEmitter {
     public privateMessages: {[username: string]: any[]};
 
     /**
+     * User cursor's
+     * @TODO to be typed with the correct schema
+     */
+    public cursors: {[username: string]: {date: Date, x: number, y: number, user: any}};
+
+    /**
      * Polls in progress
      * @TODO to be typed with the correct schema
      */
     public polls: any[];
+
+    /**
+     * Results of yt api search
+     * @TODO to be typed with the correct schema
+     */
+    public ytApiSearchResult: any[];
+
+    /**
+     * Last poll's result
+     * @TODO to be typed with the correct schema
+     */
+    public pollResult: any | null;
 
     constructor(config: SkyChatConfig) {
         super();
@@ -70,6 +88,8 @@ export class SkyChatClient extends EventEmitter {
         this.messages = [];
         this.privateMessages = {};
         this.polls = [];
+        this.pollResult = null;
+        this.ytApiSearchResult = [];
         this.bind();
     }
 
@@ -376,7 +396,7 @@ export class SkyChatClient extends EventEmitter {
      * @param pollResult
      */
     onPollResult(pollResult: any) {
-
+        this.pollResult = pollResult;
     }
 
     /**
@@ -388,23 +408,25 @@ export class SkyChatClient extends EventEmitter {
     }
 
     /**
-     *
+     * Update the cursor position of an user
      */
-    onCursor(cursor: any) {
-
+    onCursor({x, y, user}: {x: number, y: number, user: any}) {
+        this.cursors[user.username] = {
+            x, y, user, date: new Date()
+        }
     }
 
     /**
      *
      */
     onRoll(roll: any) {
-
+        // No logic here. It's up to implementations to override this method, or clients to listen
     }
 
     /**
      *
      */
     onYtApiSearchResults(items: any[]) {
-
+        this.ytApiSearchResult = items;
     }
 }
