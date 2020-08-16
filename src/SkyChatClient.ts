@@ -12,17 +12,45 @@ export class SkyChatClient extends EventEmitter {
 
     public readonly config: SkyChatConfig;
 
+    public currentRoomId: number | null;
+
+    /**
+     * @TODO to be typed with the correct schema
+     */
+    public currentUser: any | null;
+
+    /**
+     * @TODO to be typed with the correct schema
+     */
+    public connectedList: any[];
+
+    /**
+     * @TODO to be typed with the correct schema (List of users)
+     */
+    public typingList: any[];
+
+    /**
+     * @TODO to be typed with the correct schema
+     */
+    public playerState: any | null;
+
     constructor(config: SkyChatConfig) {
         super();
 
         this.config = config;
+        this.currentRoomId = null;
+        this.currentUser = null;
+        this.connectedList = [];
+        this.typingList = [];
+        this.playerState = null;
+        this.bind();
     }
 
     /**
      * Connect to the server
      */
     connect() {
-        this.webSocket = new WebSocket((this.config.secure ? 'ws' : 'wss') + '://' + this.config.host);
+        this.webSocket = new WebSocket((this.config.secure ? 'wss' : 'ws') + '://' + this.config.host);
         this.webSocket.addEventListener('message', this.onWebSocketMessage.bind(this));
         this.webSocket.addEventListener('close', this.onWebSocketClose.bind(this));
     }
@@ -169,5 +197,166 @@ export class SkyChatClient extends EventEmitter {
      */
     vote(pollId: number | string, answer: boolean) {
         this.sendMessage(`/vote ${pollId} ${answer ? 'y' : 'n'}`);
+    }
+
+    /**
+     * Send a last message seen notification
+     * @param {number} messageId
+     */
+    notifySeenMessage(messageId: number) {
+        this.sendMessage(`/lastseen ${messageId}`);
+    }
+
+    /**
+     * Bind own event listeners
+     */
+    bind() {
+        this.on('join-room', this.onJoinRoom.bind(this));
+        this.on('message', this.onMessage.bind(this));
+        this.on('messages', this.onMessages.bind(this));
+        this.on('private-message', this.onPrivateMessage.bind(this));
+        this.on('message-edit', this.onMessageEdit.bind(this));
+        this.on('message-seen', this.onMessageSeen.bind(this));
+        this.on('set-user', this.onSetUser.bind(this));
+        this.on('connected-list', this.onConnectedList.bind(this));
+        this.on('yt-sync', this.onYtSync.bind(this));
+        this.on('poll', this.onPoll.bind(this));
+        this.on('poll-result', this.onPollResult.bind(this));
+        this.on('auth-token', this.onAuthToken.bind(this));
+        this.on('typing-list', this.onTypingList.bind(this));
+        this.on('cursor', this.onCursor.bind(this));
+        this.on('roll', this.onRoll.bind(this));
+        this.on('ytapi:search', this.onYtApiSearchResults.bind(this));
+        //this.on('error', this.onError.bind(this));
+    }
+
+
+    /**
+     *
+     * @param token auth token
+     */
+    onAuthToken(token: any) {
+        if (token) {
+
+        } else {
+
+        }
+    }
+
+    /**
+     * Update the current room id
+     * @param {number} roomId
+     */
+    onJoinRoom(roomId: number) {
+        this.currentRoomId = roomId;
+    }
+
+    /**
+     *
+     * @param message
+     */
+    onMessage(message: any) {
+
+    }
+
+    /**
+     *
+     * @param messages
+     */
+    onMessages(messages: any[]) {
+
+    }
+
+    /**
+     *
+     * @param privateMessage
+     */
+    onPrivateMessage(privateMessage: any) {
+
+    }
+
+    /**
+     *
+     * @param message
+     */
+    onMessageEdit(message: any) {
+
+    }
+
+    /**
+     * Information about a message seen by another user
+     * @param data
+     */
+    onMessageSeen(data: any) {
+
+    }
+
+    /**
+     *
+     * @param user
+     */
+    onSetUser(user: any) {
+        this.currentUser = user;
+    }
+
+    /**
+     *
+     * @param connectedList
+     */
+    onConnectedList(connectedList: any[]) {
+        this.connectedList = connectedList;
+    }
+
+    /**
+     *
+     * @param playerState
+     */
+    onYtSync(playerState: any) {
+        this.playerState = playerState;
+    }
+
+    /**
+     *
+     * @param polls
+     */
+    onPoll(polls: any[]) {
+
+    }
+
+    /**
+     *
+     * @param pollResult
+     */
+    onPollResult(pollResult: any) {
+
+    }
+
+    /**
+     *
+     * @param users
+     */
+    onTypingList(users: any[]) {
+        this.typingList = users;
+    }
+
+    /**
+     *
+     */
+    onCursor(cursor: any) {
+
+    }
+
+    /**
+     *
+     */
+    onRoll(roll: any) {
+
+    }
+
+    /**
+     *
+     */
+    onYtApiSearchResults(items: any[]) {
+
     }
 }
