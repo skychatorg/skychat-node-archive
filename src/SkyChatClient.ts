@@ -50,7 +50,8 @@ export class SkyChatClient extends EventEmitter {
      * Connect to the server
      */
     connect() {
-        this.webSocket = new WebSocket((this.config.secure ? 'wss' : 'ws') + '://' + this.config.host);
+        const path = (this.config.secure ? 'wss' : 'ws') + '://' + this.config.host + (this.config.port ? ':' + this.config.port : '');
+        this.webSocket = new WebSocket(path);
         this.webSocket.addEventListener('message', this.onWebSocketMessage.bind(this));
         this.webSocket.addEventListener('close', this.onWebSocketClose.bind(this));
     }
@@ -68,7 +69,8 @@ export class SkyChatClient extends EventEmitter {
      *
      */
     onWebSocketClose(event: CloseEvent) {
-        if (event.code === 4403) {
+        console.log(event);
+        if ([4403, 4499].indexOf(event.code) !== -1) {
             // send error ?
             return;
         }
@@ -156,6 +158,14 @@ export class SkyChatClient extends EventEmitter {
     }
 
     /**
+     * Join the given room
+     * @param roomId
+     */
+    joinRoom(roomId: number) {
+        this.sendEvent('join-room', {roomId});
+    }
+
+    /**
      * Login
      * @param username
      * @param password
@@ -173,11 +183,11 @@ export class SkyChatClient extends EventEmitter {
     }
 
     /**
-     * Logout
+     * Disconnect
      */
-    logout() {
+    disconnect() {
         if (this.webSocket) {
-            this.webSocket.close();
+            this.webSocket.close(4499);
         }
     }
 
