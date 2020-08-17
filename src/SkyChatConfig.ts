@@ -3,7 +3,9 @@ export interface SkyChatConfig {
 
     host: string;
 
+    secure: boolean;
+
     port?: number;
 
-    secure?: boolean;
+    messageBufferLength: number;
 }

@@ -1,12 +1,19 @@
 import {EventEmitter} from "events";
 import {SkyChatConfig} from "./SkyChatConfig";
 import * as WebSocket from "isomorphic-ws";
+import {OpenEvent} from "ws";
 
 
 /**
  * Client for a SkyChat Server
  */
 export class SkyChatClient extends EventEmitter {
+
+    static readonly DEFAULT_CONFIG: SkyChatConfig = {
+        host: '127.0.0.1',
+        secure: false,
+        messageBufferLength: 200,
+    };
 
     public webSocket: WebSocket | null;
 
@@ -75,10 +82,10 @@ export class SkyChatClient extends EventEmitter {
      */
     public pollResult: any | null;
 
-    constructor(config: SkyChatConfig) {
+    constructor(config: Partial<SkyChatConfig>) {
         super();
 
-        this.config = config;
+        this.config = Object.assign(Object.assign({}, SkyChatClient.DEFAULT_CONFIG), config);
         this.currentRoomId = null;
         this.token = null;
         this.currentUser = null;
@@ -87,6 +94,7 @@ export class SkyChatClient extends EventEmitter {
         this.playerState = null;
         this.messages = [];
         this.privateMessages = {};
+        this.cursors = {};
         this.polls = [];
         this.pollResult = null;
         this.ytApiSearchResult = [];
@@ -102,9 +110,21 @@ export class SkyChatClient extends EventEmitter {
         const port = this.config.port ? ':' + this.config.port : '';
         const path = protocol + this.config.host + port;
         // Create websocket
-        this.webSocket = new WebSocket(path);
-        this.webSocket.addEventListener('message', this.onWebSocketMessage.bind(this));
-        this.webSocket.addEventListener('close', this.onWebSocketClose.bind(this));
+        return new Promise((resolve, reject) => {
+            this.webSocket = new WebSocket(path);
+            this.webSocket.addEventListener('open', this.onWebSocketOpen.bind(this));
+            this.webSocket.addEventListener('message', this.onWebSocketMessage.bind(this));
+            this.webSocket.addEventListener('close', this.onWebSocketClose.bind(this));
+            this.webSocket.once('open', resolve);
+            this.webSocket.once('close', reject);
+        });
+    }
+
+    /**
+     *
+     */
+    onWebSocketOpen(event: OpenEvent) {
+
     }
 
     /**
@@ -120,7 +140,6 @@ export class SkyChatClient extends EventEmitter {
      *
      */
     onWebSocketClose(event: CloseEvent) {
-        console.log(event);
         if ([4403, 4499].indexOf(event.code) !== -1) {
             // send error ?
             return;
@@ -314,6 +333,7 @@ export class SkyChatClient extends EventEmitter {
      */
     onMessage(message: any) {
         this.messages.push(message);
+        this.messages.splice(0, this.messages.length - this.config.messageBufferLength);
     }
 
     /**
@@ -322,6 +342,7 @@ export class SkyChatClient extends EventEmitter {
      */
     onMessages(messages: any[]) {
         this.messages.push(...messages);
+        this.messages.splice(0, this.messages.length - this.config.messageBufferLength);
     }
 
     /**
@@ -411,7 +432,7 @@ export class SkyChatClient extends EventEmitter {
      * Update the cursor position of an user
      */
     onCursor({x, y, user}: {x: number, y: number, user: any}) {
-        this.cursors[user.username] = {
+        this.cursors[user.id] = {
             x, y, user, date: new Date()
         }
     }
