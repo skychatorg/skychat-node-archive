@@ -2,6 +2,14 @@ import {EventEmitter} from "events";
 import {SkyChatConfig} from "./SkyChatConfig";
 import * as WebSocket from "isomorphic-ws";
 import {OpenEvent} from "ws";
+import {
+    AuthToken,
+    SanitizedMessage, SanitizedPoll,
+    SanitizedPrivateMessage,
+    SanitizedSession,
+    SanitizedUser,
+    SyncPlayerStateObject
+} from "skychat";
 
 
 /**
@@ -315,7 +323,7 @@ export class SkyChatClient extends EventEmitter {
      * When the server updates the user's token.
      * @param token auth token
      */
-    onAuthToken(token: any) {
+    onAuthToken(token: AuthToken) {
         this.token = token;
     }
 
@@ -331,7 +339,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param message
      */
-    onMessage(message: any) {
+    onMessage(message: SanitizedMessage) {
         this.messages.push(message);
         this.messages.splice(0, this.messages.length - this.config.messageBufferLength);
     }
@@ -340,7 +348,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param messages
      */
-    onMessages(messages: any[]) {
+    onMessages(messages: SanitizedMessage[]) {
         this.messages.push(...messages);
         this.messages.splice(0, this.messages.length - this.config.messageBufferLength);
     }
@@ -349,7 +357,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param privateMessage
      */
-    onPrivateMessage(privateMessage: any) {
+    onPrivateMessage(privateMessage: SanitizedPrivateMessage) {
         if (typeof this.privateMessages[privateMessage.user.username] === 'undefined') {
             this.privateMessages[privateMessage.user.username] = [];
         }
@@ -360,7 +368,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param message
      */
-    onMessageEdit(message: any) {
+    onMessageEdit(message: SanitizedMessage) {
         const messageIndex =  this.messages.findIndex(m => m.id === message.id);
         if (messageIndex === -1) {
             return;
@@ -372,7 +380,7 @@ export class SkyChatClient extends EventEmitter {
      * Information about a message seen by another user
      * @param data
      */
-    onMessageSeen(data: any) {
+    onMessageSeen(data: { user: number, message: number }) {
         const entry = this.connectedList.find(e => e.user.id === data.user);
         if (! entry) {
             return;
@@ -384,7 +392,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param user
      */
-    onSetUser(user: any) {
+    onSetUser(user: SanitizedUser) {
         this.currentUser = user;
     }
 
@@ -392,7 +400,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param connectedList
      */
-    onConnectedList(connectedList: any[]) {
+    onConnectedList(connectedList: SanitizedSession[]) {
         this.connectedList = connectedList;
     }
 
@@ -400,7 +408,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param playerState
      */
-    onYtSync(playerState: any) {
+    onYtSync(playerState: SyncPlayerStateObject) {
         this.playerState = playerState;
     }
 
@@ -408,7 +416,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param polls
      */
-    onPoll(polls: any[]) {
+    onPoll(polls: SanitizedPoll[]) {
         this.polls = polls;
     }
 
@@ -416,7 +424,7 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param pollResult
      */
-    onPollResult(pollResult: any) {
+    onPollResult(pollResult: SanitizedPoll) {
         this.pollResult = pollResult;
     }
 
@@ -424,14 +432,14 @@ export class SkyChatClient extends EventEmitter {
      *
      * @param users
      */
-    onTypingList(users: any[]) {
+    onTypingList(users: SanitizedUser[]) {
         this.typingList = users;
     }
 
     /**
      * Update the cursor position of an user
      */
-    onCursor({x, y, user}: {x: number, y: number, user: any}) {
+    onCursor({x, y, user}: {x: number, y: number, user: SanitizedUser}) {
         this.cursors[user.id] = {
             x, y, user, date: new Date()
         }
